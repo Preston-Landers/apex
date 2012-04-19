@@ -1,4 +1,4 @@
-import requests
+mport requests
 from sqlalchemy.orm.exc import NoResultFound
 
 from pyramid.decorator import reify
@@ -317,13 +317,6 @@ def get_came_from(request):
                                route_url(apex_settings('came_from_route'), \
                                request))
                           )
-
-def get_came_from(request):
-    return request.GET.get('came_from',
-        request.POST.get(
-            'came_from',
-            route_url(apex_settings('came_from_route'), request))
-        )
 
 class RequestFactory(Request):
     """ Custom Request factory, that adds the user context
