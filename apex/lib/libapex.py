@@ -318,6 +318,13 @@ def get_came_from(request):
                                request))
                           )
 
+def get_came_from(request):
+    return request.GET.get('came_from',
+        request.POST.get(
+            'came_from',
+            route_url(apex_settings('came_from_route'), request))
+        )
+
 class RequestFactory(Request):
     """ Custom Request factory, that adds the user context
         to request.
