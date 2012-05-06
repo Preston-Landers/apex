@@ -20,7 +20,7 @@ def get_object_or_404(session, model, **kw):
     """
     obj = session.query(model).filter_by(**kw).first()
     if obj is None:
-        raise HTTPNotFound(detail=_('No %s matches the given query.') % model.__name__)
+        raise HTTPNotFound(detail='No %s matches the given query.' % model.__name__)
     return obj
 
 def merge_session_with_post(session, post):
