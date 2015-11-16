@@ -1,4 +1,4 @@
-mport base64
+import base64
 import hmac
 import time
 
@@ -13,13 +13,8 @@ from pyramid.response import Response
 from pyramid.security import (authenticated_userid,
                               forget)
 from pyramid.settings import asbool
-<<<<<<< HEAD
 from pyramid.url import (current_route_url,
                          route_url)
-=======
-from pyramid.url import current_route_url
-from pyramid.url import route_url
->>>>>>> max_cookie_age added
 
 from apex import MessageFactory as _
 from apex.lib.db import merge_session_with_post
@@ -77,12 +72,8 @@ def login(request):
     if request.method == 'POST' and form.validate():
         user = AuthUser.get_by_login(form.data.get('login'))
         if user:
-<<<<<<< HEAD
             headers = apex_remember(request, user, \
                 max_age=apex_settings('max_cookie_age', None))
-=======
-            headers = apex_remember(request, user, max_age=apex_settings('max_cookie_age', None))
->>>>>>> max_cookie_age added
             return HTTPFound(location=came_from, headers=headers)
 
     return {'title': title, 'form': form, 'velruse_forms': velruse_forms, \

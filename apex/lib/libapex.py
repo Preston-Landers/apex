@@ -1,4 +1,4 @@
-mport requests
+import requests
 from sqlalchemy.orm.exc import NoResultFound
 
 from pyramid.decorator import reify
