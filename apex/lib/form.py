@@ -1,4 +1,5 @@
 import cgi
+import six
 
 from wtforms import Form
 from wtforms import validators
@@ -24,7 +25,7 @@ class ExtendedForm(Form):
 
         self.is_multipart = False
 
-        for name, field in self._fields.iteritems():
+        for name, field in six.iteritems(self._fields):
             if field.type == 'FileField':
                 self.is_multipart = True
 
@@ -36,13 +37,13 @@ class ExtendedForm(Form):
         """ Returns all the hidden fields.
         """
         return [self._fields[name] for name, field in self._unbound_fields
-            if self._fields.has_key(name) and self._fields[name].type == 'HiddenField']
+            if name in self._fields and self._fields[name].type == 'HiddenField']
 
     def visible_fields(self):
         """ Returns all the visible fields.
         """
         return [self._fields[name] for name, field in self._unbound_fields
-            if self._fields.has_key(name) and not self._fields[name].type == 'HiddenField']
+            if name in self._fields and not self._fields[name].type == 'HiddenField']
 
     def _get_translations(self): 
         if self.request:

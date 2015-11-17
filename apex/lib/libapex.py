@@ -1,4 +1,5 @@
 import requests
+import six
 from sqlalchemy.orm.exc import NoResultFound
 
 from pyramid.decorator import reify
@@ -280,7 +281,7 @@ def generate_velruse_forms(request, came_from, exclude=set([])):
         providers = list(set([x.strip() for x in providers.split(',')]) - \
             exclude)
         for provider in providers:
-            if provider_forms.has_key(provider):
+            if provider in provider_forms:
                 form = provider_forms[provider](
                     end_point='%s?csrf_token=%s&came_from=%s' % \
                      (request.route_url('apex_callback'), \
@@ -303,7 +304,7 @@ def apex_remember(request, user, max_age=None):
             ip_addr = request.environ.get(apex_settings('log_login_header'), \
                     u'invalid value - apex.log_login_header')
         else:
-             ip_addr = unicode(request.environ['REMOTE_ADDR'])
+             ip_addr = six.u(request.environ['REMOTE_ADDR'])
         record = AuthUserLog(auth_id=user.auth_id, user_id=user.id, \
             ip_addr=ip_addr)
         DBSession.add(record)

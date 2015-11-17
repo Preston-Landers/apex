@@ -16,3 +16,5 @@
 .idea/
 atlassian-ide-plugin.xml
 .DS_Store
+.eggs/
+.tox/

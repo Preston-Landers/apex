@@ -15,6 +15,7 @@ install_requires = [
     "requests",
     "wtforms",
     "wtforms-recaptcha",
+    "six"
 ]
 
 tests_require = install_requires + ['Sphinx', 'docutils',

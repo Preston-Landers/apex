@@ -315,11 +315,11 @@ def apex_callback(request):
             pass
         if auth:
             user = None
-            if not request.session.has_key('id'):
+            if 'id' not in request.session:
                 user = AuthUser.get_by_login(auth['id'])
             if not user:
                 id = None
-                if request.session.has_key('id'):
+                if 'id' in request.session:
                     id = AuthID.get_by_id(request.session['id'])
                 else:
                     id = AuthID()
@@ -329,7 +329,7 @@ def apex_callback(request):
                     login=auth_info['userid'],
                     provider=auth_info['domain'],
                 )
-                if auth['profile'].has_key('verifiedEmail'):
+                if 'verifiedEmail' in auth['profile']:
                     user.email = auth['profile']['verifiedEmail']
                 id.users.append(user)
                 if apex_settings('default_user_group'):
