@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+
 import requests
 import six
+
 from sqlalchemy.orm.exc import NoResultFound
 
 from pyramid.decorator import reify
