@@ -1,7 +1,10 @@
 import os
+import sys
 
 from setuptools import find_packages
 from setuptools import setup
+
+py_version = sys.version_info[:2]
 
 version = '0.9.11'
 
@@ -20,7 +23,13 @@ install_requires = [
 
 tests_require = install_requires + ['Sphinx', 'docutils',
                                     'WebTest', 'virtualenv',
-                                    'nose', 'coverage']
+                                    'nose']
+
+# coverage doesn't support python 3.2
+if py_version == (3, 2):
+    tests_require.append('coverage==3.7.1')
+else:
+    tests_require.append('coverage')
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:

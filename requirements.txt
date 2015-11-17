@@ -8,5 +8,4 @@ requests
 wtforms
 wtforms-recaptcha
 nose
-coverage
 six
