@@ -1,5 +1,6 @@
 import colander
 
+
 @colander.deferred
 def deferred_csrf_token(node, kw):
     """
@@ -18,7 +19,8 @@ def deferred_csrf_token(node, kw):
         )
 
     # in your view, bind the token to the schema
-    schema = SubmitNewsSchema(validator=SubmitNewsValidator).bind(csrf_token=request.session.get_csrf_token())
+    schema = SubmitNewsSchema(validator=SubmitNewsValidator)
+        .bind(csrf_token=request.session.get_csrf_token())
 
     """
     csrf_token = kw.get('csrf_token')

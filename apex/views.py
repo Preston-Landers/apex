@@ -54,14 +54,14 @@ def login(request):
     if not apex_settings('exclude_local'):
         if asbool(apex_settings('use_recaptcha_on_login')):
             if apex_settings('recaptcha_public_key') and \
-                apex_settings('recaptcha_private_key'):
+                    apex_settings('recaptcha_private_key'):
                 LoginForm.captcha = RecaptchaField(
                     public_key=apex_settings('recaptcha_public_key'),
                     private_key=apex_settings('recaptcha_private_key'),
                 )
             form = LoginForm(request.POST,
-                             captcha={'ip_address': \
-                             request.environ['REMOTE_ADDR']})
+                             captcha={'ip_address':
+                                      request.environ['REMOTE_ADDR']})
         else:
             form = LoginForm(request.POST)
     else:
@@ -72,13 +72,15 @@ def login(request):
     if request.method == 'POST' and form.validate():
         user = AuthUser.get_by_login(form.data.get('login'))
         if user:
-            headers = apex_remember(request, user, \
-                max_age=apex_settings('max_cookie_age', None))
+            headers = \
+                apex_remember(request, user,
+                              max_age=apex_settings('max_cookie_age', None))
             return HTTPFound(location=came_from, headers=headers)
 
-    return {'title': title, 'form': form, 'velruse_forms': velruse_forms, \
+    return {'title': title, 'form': form, 'velruse_forms': velruse_forms,
             'form_url': request.route_url('apex_login'),
             'action': 'login'}
+
 
 def logout(request):
     """ logout(request):
@@ -88,6 +90,7 @@ def logout(request):
     came_from = get_came_from(request)
     request.session.invalidate()
     return HTTPFound(location=came_from, headers=headers)
+
 
 def change_password(request):
     """ change_password(request):
@@ -100,18 +103,19 @@ def change_password(request):
 
     came_from = get_came_from(request)
     user = DBSession.query(AuthUser). \
-               filter(AuthUser.auth_id==authenticated_userid(request)). \
-               filter(AuthUser.provider=='local').first()
+        filter(AuthUser.auth_id == authenticated_userid(request)). \
+        filter(AuthUser.provider == 'local').first()
     form = ChangePasswordForm(request.POST, user_id=user.id)
 
     if request.method == 'POST' and form.validate():
-        #user = AuthID.get_by_id(authenticated_userid(request))
+        # user = AuthID.get_by_id(authenticated_userid(request))
         user.password = form.data['password']
         DBSession.merge(user)
         DBSession.flush()
         return HTTPFound(location=came_from)
 
     return {'title': title, 'form': form, 'action': 'changepass'}
+
 
 def forgot_password(request):
     """ forgot_password(request):
@@ -121,13 +125,13 @@ def forgot_password(request):
 
     if asbool(apex_settings('use_recaptcha_on_forgot')):
         if apex_settings('recaptcha_public_key') and \
-            apex_settings('recaptcha_private_key'):
+                apex_settings('recaptcha_private_key'):
             ForgotForm.captcha = RecaptchaField(
                 public_key=apex_settings('recaptcha_public_key'),
                 private_key=apex_settings('recaptcha_private_key'),
             )
-    form = ForgotForm(request.POST, \
-               captcha={'ip_address': request.environ['REMOTE_ADDR']})
+    form = ForgotForm(request.POST,
+                      captcha={'ip_address': request.environ['REMOTE_ADDR']})
     if request.method == 'POST' and form.validate():
         """ Special condition - if email imported from OpenID/Auth, we can
             direct the person to the appropriate login through a flash
@@ -137,25 +141,24 @@ def forgot_password(request):
             user = AuthUser.get_by_email(form.data['email'])
             if user.provider != 'local':
                 provider_name = user.provider
-                flash(_('You used %s as your login provider' % \
-                     provider_name))
-                return HTTPFound(location=route_url('apex_login', \
-                                          request))
+                flash(_('You used %s as your login provider' %
+                      provider_name))
+                return HTTPFound(location=route_url('apex_login', request))
         if form.data['login']:
             user = AuthUser.get_by_login(form.data['login'])
         if user:
             timestamp = time.time()+3600
-            hmac_key = hmac.new('%s:%s:%d' % (str(user.id), \
-                                apex_settings('auth_secret'), timestamp), \
+            hmac_key = hmac.new('%s:%s:%d' % (str(user.id),
+                                apex_settings('auth_secret'), timestamp),
                                 user.email).hexdigest()[0:10]
             time_key = base64.urlsafe_b64encode('%d' % timestamp)
             email_hash = '%s%s' % (hmac_key, time_key)
             apex_email_forgot(request, user.id, user.email, email_hash)
             flash(_('Password Reset email sent.'))
-            return HTTPFound(location=route_url('apex_login', \
-                                                request))
+            return HTTPFound(location=route_url('apex_login', request))
         flash(_('An error occurred, please contact the support team.'))
     return {'title': title, 'form': form, 'action': 'forgot'}
+
 
 def reset_password(request):
     """ reset_password(request):
@@ -165,13 +168,14 @@ def reset_password(request):
 
     if asbool(apex_settings('use_recaptcha_on_reset')):
         if apex_settings('recaptcha_public_key') and \
-            apex_settings('recaptcha_private_key'):
+                apex_settings('recaptcha_private_key'):
             ResetPasswordForm.captcha = RecaptchaField(
                 public_key=apex_settings('recaptcha_public_key'),
                 private_key=apex_settings('recaptcha_private_key'),
             )
-    form = ResetPasswordForm(request.POST, \
-               captcha={'ip_address': request.environ['REMOTE_ADDR']})
+    form = ResetPasswordForm(request.POST,
+                             captcha={'ip_address':
+                                      request.environ['REMOTE_ADDR']})
     if request.method == 'POST' and form.validate():
         user_id = request.matchdict.get('user_id')
         user = AuthUser.get_by_id(user_id)
@@ -179,22 +183,23 @@ def reset_password(request):
         current_time = time.time()
         time_key = int(base64.b64decode(submitted_hmac[10:]))
         if current_time < time_key:
-            hmac_key = hmac.new('%s:%s:%d' % (str(user.id), \
-                                apex_settings('auth_secret'), time_key), \
+            hmac_key = hmac.new('%s:%s:%d' % (str(user.id),
+                                apex_settings('auth_secret'), time_key),
                                 user.email).hexdigest()[0:10]
             if hmac_key == submitted_hmac[0:10]:
-                #FIXME reset email, no such attribute email
+                # FIXME reset email, no such attribute email
                 user.password = form.data['password']
                 DBSession.merge(user)
                 DBSession.flush()
                 flash(_('Password Changed. Please log in.'))
-                return HTTPFound(location=route_url('apex_login', \
+                return HTTPFound(location=route_url('apex_login',
                                                     request))
             else:
                 flash(_('Invalid request, please try again'))
-                return HTTPFound(location=route_url('apex_forgot', \
+                return HTTPFound(location=route_url('apex_forgot',
                                                     request))
     return {'title': title, 'form': form, 'action': 'reset'}
+
 
 def activate(request):
     """
@@ -205,30 +210,32 @@ def activate(request):
     current_time = time.time()
     time_key = int(base64.b64decode(submitted_hmac[10:]))
     if current_time < time_key:
-        hmac_key = hmac.new('%s:%s:%d' % (str(user.id), \
-                            apex_settings('auth_secret'), time_key), \
+        hmac_key = hmac.new('%s:%s:%d' % (str(user.id),
+                            apex_settings('auth_secret'), time_key),
                             user.email).hexdigest()[0:10]
         if hmac_key == submitted_hmac[0:10]:
             user.active = 'Y'
             DBSession.merge(user)
             DBSession.flush()
             flash(_('Account activated. Please log in.'))
-            return HTTPFound(location=route_url('apex_login', \
+            return HTTPFound(location=route_url('apex_login',
                                                 request))
     flash(_('Invalid request, please try again'))
-    return HTTPFound(location=route_url(apex_settings('came_from_route'), \
+    return HTTPFound(location=route_url(apex_settings('came_from_route'),
                                         request))
+
 
 def register(request):
     """ register(request):
     no return value, called with route_url('apex_register', request)
     """
     title = _('Register')
-    came_from = request.params.get('came_from', \
-                    route_url(apex_settings('came_from_route'), request))
+    came_from = request.params.get('came_from',
+                                   route_url(apex_settings('came_from_route'),
+                                             request))
     velruse_forms = generate_velruse_forms(request, came_from)
 
-    #This fixes the issue with RegisterForm throwing an UnboundLocalError
+    # This fixes the issue with RegisterForm throwing an UnboundLocalError
     if apex_settings('register_form_class'):
         RegisterForm = get_module(apex_settings('register_form_class'))
     else:
@@ -237,14 +244,15 @@ def register(request):
     if not apex_settings('exclude_local'):
         if asbool(apex_settings('use_recaptcha_on_register')):
             if apex_settings('recaptcha_public_key') and \
-                apex_settings('recaptcha_private_key'):
+                    apex_settings('recaptcha_private_key'):
                 RegisterForm.captcha = RecaptchaField(
                     public_key=apex_settings('recaptcha_public_key'),
                     private_key=apex_settings('recaptcha_private_key'),
                 )
 
-        form = RegisterForm(request.POST, captcha={'ip_address': \
-            request.environ['REMOTE_ADDR']})
+        form = RegisterForm(request.POST,
+                            captcha={'ip_address':
+                                     request.environ['REMOTE_ADDR']})
     else:
         form = None
 
@@ -254,13 +262,15 @@ def register(request):
         headers = apex_remember(request, user)
         return HTTPFound(location=came_from, headers=headers)
 
-    return {'title': title, 'form': form, 'velruse_forms': velruse_forms, \
+    return {'title': title, 'form': form, 'velruse_forms': velruse_forms,
             'action': 'register'}
+
 
 def add_auth(request):
     title = _('Add another Authentication method')
-    came_from = request.params.get('came_from', \
-                    route_url(apex_settings('came_from_route'), request))
+    came_from = request.params.get('came_from',
+                                   route_url(apex_settings('came_from_route'),
+                                             request))
     auth_id = authenticated_userid(request)
     request.session['id'] = auth_id
     auth_providers = apex_id_providers(auth_id)
@@ -270,7 +280,7 @@ def add_auth(request):
 
     velruse_forms = generate_velruse_forms(request, came_from, exclude)
 
-    #This fixes the issue with RegisterForm throwing an UnboundLocalError
+    # This fixes the issue with RegisterForm throwing an UnboundLocalError
     if apex_settings('auth_form_class'):
         AddAuthForm = get_module(apex_settings('auth_form_class'))
     else:
@@ -280,22 +290,24 @@ def add_auth(request):
     if not apex_settings('exclude_local') and 'local' not in exclude:
         if not asbool(apex_settings('use_recaptcha_on_auth')):
             if apex_settings('recaptcha_public_key') and \
-                apex_settings('recaptcha_private_key'):
+                    apex_settings('recaptcha_private_key'):
                 AddAuthForm.captcha = RecaptchaField(
                     public_key=apex_settings('recaptcha_public_key'),
                     private_key=apex_settings('recaptcha_private_key'),
                 )
 
-        form = AddAuthForm(request.POST, captcha={'ip_address': \
-            request.environ['REMOTE_ADDR']})
+        form = AddAuthForm(request.POST,
+                           captcha={'ip_address':
+                                    request.environ['REMOTE_ADDR']})
 
     if request.method == 'POST' and form.validate():
         form.save(auth_id)
 
         return HTTPFound(location=came_from)
 
-    return {'title': title, 'form': form, 'velruse_forms': velruse_forms, \
+    return {'title': title, 'form': form, 'velruse_forms': velruse_forms,
             'action': 'add_auth'}
+
 
 def apex_callback(request):
     """ apex_callback(request):
@@ -303,8 +315,9 @@ def apex_callback(request):
 
     This is the URL that Velruse returns an OpenID request to
     """
-    redir = request.GET.get('came_from', \
-                route_url(apex_settings('came_from_route'), request))
+    redir = request.GET.get('came_from',
+                            route_url(apex_settings('came_from_route'),
+                                      request))
     headers = []
     if 'token' in request.POST:
         auth = None
@@ -333,13 +346,13 @@ def apex_callback(request):
                     user.email = auth['profile']['verifiedEmail']
                 id.users.append(user)
                 if apex_settings('default_user_group'):
-                    for name in apex_settings('default_user_group'). \
-                                              split(','):
+                    for name in apex_settings('default_user_group').split(','):
                         group = DBSession.query(AuthGroup). \
-                           filter(AuthGroup.name==name.strip()).one()
+                            filter(AuthGroup.name == name.strip()).one()
                         id.groups.append(group)
                 if apex_settings('create_openid_after'):
-                    openid_after = get_module(apex_settings('create_openid_after'))
+                    openid_after = \
+                        get_module(apex_settings('create_openid_after'))
                     openid_after().after_signup(request=request, user=user)
                 DBSession.flush()
             if apex_settings('openid_required'):
@@ -350,15 +363,19 @@ def apex_callback(request):
                 if openid_required:
                     request.session['id'] = id.id
                     request.session['userid'] = user.id
-                    return HTTPFound(location='%s?came_from=%s' % \
-                        (route_url('apex_openid_required', request), \
-                        request.GET.get('came_from', \
-                        route_url(apex_settings('came_from_route'), request))))
+                    return HTTPFound(location='%s?came_from=%s' % (
+                        route_url('apex_openid_required', request),
+                        request.GET.get('came_from',
+                                        route_url(
+                                            apex_settings('came_from_route'),
+                                            request))))
             headers = apex_remember(request, user)
-            redir = request.GET.get('came_from', \
-                        route_url(apex_settings('came_from_route'), request))
+            redir = request.GET.get('came_from',
+                                    route_url(apex_settings('came_from_route'),
+                                              request))
             flash(_('Successfully Logged in, welcome!'), 'success')
     return HTTPFound(location=redir, headers=headers)
+
 
 def openid_required(request):
     """ openid_required(request)
@@ -371,21 +388,24 @@ def openid_required(request):
     Called on Registration or Login with OpenID Authentication.
     """
     title = _('OpenID Registration')
-    came_from = request.params.get('came_from', \
-                    route_url(apex_settings('came_from_route'), request))
+    came_from = request.params.get('came_from',
+                                   route_url(apex_settings('came_from_route'),
+                                             request))
 
-    #This fixes the issue with RegisterForm throwing an UnboundLocalError
+    # This fixes the issue with RegisterForm throwing an UnboundLocalError
     if apex_settings('openid_register_form_class'):
-        OpenIDRequiredForm = get_module(apex_settings('openid_register_form_class'))
+        openid_form_cls = apex_settings('openid_register_form_class')
+        OpenIDRequiredForm = get_module(openid_form_cls)
     else:
         from apex.forms import OpenIDRequiredForm
 
     for required in apex_settings('openid_required').split(','):
-        setattr(OpenIDRequiredForm, required, \
-            TextField(required, [validators.Required()]))
+        setattr(OpenIDRequiredForm, required,
+                TextField(required, [validators.Required()]))
 
-    form = OpenIDRequiredForm(request.POST, \
-               captcha={'ip_address': request.environ['REMOTE_ADDR']})
+    form = OpenIDRequiredForm(request.POST,
+                              captcha={'ip_address':
+                                       request.environ['REMOTE_ADDR']})
 
     if request.method == 'POST' and form.validate():
         """
@@ -401,6 +421,7 @@ def openid_required(request):
         return HTTPFound(location=came_from, headers=headers)
 
     return {'title': title, 'form': form, 'action': 'openid_required'}
+
 
 def forbidden(request):
     """ forbidden(request)
@@ -422,11 +443,12 @@ def forbidden(request):
     """
     if request.matched_route:
         flash(_('Not logged in, please log in'), 'error')
-        return HTTPFound(location='%s?came_from=%s' %
-                        (route_url('apex_login', request),
-                        current_route_url(request)))
+        return HTTPFound(location='%s?came_from=%s' % (
+                         route_url('apex_login', request),
+                         current_route_url(request)))
     else:
         return Response('Unknown error message')
+
 
 def edit(request):
     """ edit(request)

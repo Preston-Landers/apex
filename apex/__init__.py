@@ -1,6 +1,6 @@
 from pyramid_mailer.interfaces import IMailer
 
-from apex.i18n import MessageFactory
+from apex.i18n import MessageFactory # flake8: noqa
 
 from sqlalchemy import engine_from_config
 
@@ -41,8 +41,8 @@ from apex.views import (apex_callback,
 
 """
 
+from apex.lib.flash import flash # flake8: noqa
 
-from apex.lib.flash import flash
 
 def includeme(config):
     settings = config.registry.settings

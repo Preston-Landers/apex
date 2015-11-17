@@ -1,6 +1,3 @@
-import unittest
-
-from pyramid import testing
 from apex.tests import BaseTestCase
 
 
@@ -14,8 +11,8 @@ class Test_lib_libapex(BaseTestCase):
         from apex.lib.libapex import (create_user,
                                       groupfinder)
 
-        user = create_user(username='libtest', password='password', \
-            group='users')
+        user = create_user(username='libtest', password='password',
+                           group='users')
         self.assertEqual([u'group:users'], groupfinder(user.auth_id, None))
         self.assertNotEqual(None, groupfinder(user.auth_id, None))
         self.assertEqual(None, groupfinder(18, None))
@@ -36,7 +33,7 @@ class Test_lib_libapex(BaseTestCase):
     def test_apex_settings(self):
         # apex_settings(key=None, default=None)
         # settings not being set in registry
-        from apex.lib.libapex import apex_settings
+        # from apex.lib.libapex import apex_settings
 
         """
         self.assertEqual([], apex_settings(key=None, default=None))
@@ -57,8 +54,8 @@ class Test_lib_libapex(BaseTestCase):
 
         create_user(username='libtest', password='password')
         # check that auth_id, auth_user, auth_group are added
-        self.assertEqual('libtest', DBSession.query(AuthUser.login). \
-            filter(AuthUser.login=='libtest').one()[0])
+        self.assertEqual('libtest', DBSession.query(AuthUser.login).
+                         filter(AuthUser.login == 'libtest').one()[0])
 
     def test_generate_velruse_forms(self):
         # generate_velruse_forms(request, came_from)

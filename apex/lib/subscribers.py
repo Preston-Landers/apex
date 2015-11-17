@@ -12,6 +12,7 @@ from apex.i18n import MessageFactory as _
 
 log = logging.getLogger('apex.lib.subscribers')
 
+
 def csrf_validation(event):
     """ CSRF token validation Subscriber
 
@@ -38,7 +39,7 @@ def csrf_validation(event):
 
         apex.no_csrf = routename1:routename2
 
-        Disabled apex CSRF (20121118) - CSRF token not being passed 
+        Disabled apex CSRF (20121118) - CSRF token not being passed
         through new Velruse
 
     """
@@ -48,16 +49,18 @@ def csrf_validation(event):
             or event.request.GET.get('csrf_token') \
             or event.request.json_body.get('csrf_token') \
             or event.request.headers.get('X-CSRF-Token')
-                                    
+
         no_csrf = apex_settings('no_csrf', '').split(',')
         if (token is None or token != event.request.session.get_csrf_token()):
             if event.request.matched_route and \
                 event.request.matched_route.name not in no_csrf \
                 and not event.request.matched_route.name.startswith('debugtoolbar.') \
-                and not event.request.matched_route.name.startswith('apex_'):
-                    log.debug('apex: CSRF token received %s didn\'t match %s' % \
-                        (token, event.request.session.get_csrf_token()))
+                    and not event.request.matched_route. \
+                    name.startswith('apex_'):
+                    log.debug('apex: CSRF token received %s didn\'t match %s' %
+                              (token, event.request.session.get_csrf_token()))
                     raise HTTPForbidden(_('CSRF token is missing or invalid'))
+
 
 def add_renderer_globals(event):
     """ add globals to templates
@@ -70,6 +73,7 @@ def add_renderer_globals(event):
     request = event.get('request')
     settings = get_current_registry().settings
     template = settings['apex.apex_render_template']
+    csrf_html = '<input type="hidden" name="csrf_token" value="%s" />'
 
     if request is None:
         request = get_current_request()
@@ -78,11 +82,11 @@ def add_renderer_globals(event):
 
     globs = {
         'csrf_token': csrf_token,
-        'csrf_token_field': '<input type="hidden" name="csrf_token" value="%s" />' % csrf_token,
+        'csrf_token_field': csrf_html % csrf_token,
         'flash': flash,
     }
 
-
     if template.endswith('.pt'):
-        globs['flash_t'] = get_renderer('apex:templates/flash_template.pt').implementation()
+        globs['flash_t'] = get_renderer('apex:templates/flash_template.pt') \
+            .implementation()
     event.update(globs)

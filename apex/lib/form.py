@@ -11,6 +11,7 @@ from pyramid.threadlocal import get_current_request
 from apex.lib.db import merge_session_with_post
 from apex.lib.i18n import Translator
 
+
 class ExtendedForm(Form):
     """ Base Model used to wrap WTForms for local use
     Global Validator, Renderer Function, determines whether
@@ -37,32 +38,34 @@ class ExtendedForm(Form):
         """ Returns all the hidden fields.
         """
         return [self._fields[name] for name, field in self._unbound_fields
-            if name in self._fields and self._fields[name].type == 'HiddenField']
+                if name in self._fields and
+                self._fields[name].type == 'HiddenField']
 
     def visible_fields(self):
         """ Returns all the visible fields.
         """
         return [self._fields[name] for name, field in self._unbound_fields
-            if name in self._fields and not self._fields[name].type == 'HiddenField']
+                if name in self._fields and
+                not self._fields[name].type == 'HiddenField']
 
-    def _get_translations(self): 
+    def _get_translations(self):
         if self.request:
             localizer = get_localizer(self.request)
             return Translator(localizer)
 
-    def clean(self): 
-        """Override me to validate a whole form.""" 
+    def clean(self):
+        """Override me to validate a whole form."""
         pass
 
-    def validate(self): 
-        if not super(ExtendedForm, self).validate(): 
-            return False 
-        errors = self.clean() 
-        if errors: 
-            self._errors = {'whole_form': errors} 
-            return False 
+    def validate(self):
+        if not super(ExtendedForm, self).validate():
+            return False
+        errors = self.clean()
+        if errors:
+            self._errors = {'whole_form': errors}
+            return False
         return True
-        
+
     def render(self, **kwargs):
         action = kwargs.pop('action', '')
         submit_text = kwargs.pop('submit_text', 'Submit')
@@ -71,8 +74,8 @@ class ExtendedForm(Form):
         if not template:
             settings = self.request.registry.settings
 
-            template = settings.get('apex.form_template', \
-                'apex:templates/forms/tableform.mako')
+            template = settings.get('apex.form_template',
+                                    'apex:templates/forms/tableform.mako')
 
         return render(template, {
             'form': self,
@@ -81,12 +84,13 @@ class ExtendedForm(Form):
             'args': kwargs,
         }, request=self.request)
 
-class StyledWidget(object): 
+
+class StyledWidget(object):
     """ Allows a user to pass style to specific form field
 
     http://groups.google.com/group/wtforms/msg/6c7dd4dc7fee872d
     """
-    def __init__(self, widget=None, **kwargs): 
+    def __init__(self, widget=None, **kwargs):
         self.widget = widget
         self.kw = kwargs
 
@@ -94,24 +98,26 @@ class StyledWidget(object):
         if not self.widget:
             self.widget = field.__class__.widget
 
-        return self.widget(field, **dict(self.kw, **kwargs)) 
+        return self.widget(field, **dict(self.kw, **kwargs))
 
-class FileRequired(validators.Required): 
-    """ 
-    Required validator for file upload fields. 
+
+class FileRequired(validators.Required):
+    """
+    Required validator for file upload fields.
 
     Bug mention for validating file field:
     http://groups.google.com/group/wtforms/msg/666254426eff1102
-    """ 
-    def __call__(self, form, field): 
-        if not isinstance(field.data, cgi.FieldStorage): 
-            if self.message is None: 
-                self.message = field.gettext(u'This field is required.') 
-            field.errors[:] = [] 
+    """
+    def __call__(self, form, field):
+        if not isinstance(field.data, cgi.FieldStorage):
+            if self.message is None:
+                self.message = field.gettext(u'This field is required.')
+            field.errors[:] = []
             raise validators.StopValidation(self.message)
 
+
 class ModelForm(ExtendedForm):
-    """ Simple form that adds a save method to forms for saving 
+    """ Simple form that adds a save method to forms for saving
         forms that use WTForms' model_form function.
     """
     def save(self, session, model, commit=True):
