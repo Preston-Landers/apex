@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import requests
 import six
 
@@ -305,7 +303,7 @@ def apex_remember(request, user, max_age=None):
     if asbool(apex_settings('log_logins')):
         if apex_settings('log_login_header'):
             ip_addr = request.environ.get(apex_settings('log_login_header'), \
-                    six.u('invalid value - apex.log_login_header'))
+                    u'invalid value - apex.log_login_header')
         else:
              ip_addr = six.u(request.environ['REMOTE_ADDR'])
         record = AuthUserLog(auth_id=user.auth_id, user_id=user.id, \
