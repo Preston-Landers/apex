@@ -6,10 +6,10 @@ from setuptools import setup
 
 py_version = sys.version_info[:2]
 
-version = '0.9.11'
+version = '0.10.0'
 
 install_requires = [
-    "cryptacular",
+    "bcrypt>=3.0.0",
     "zope.sqlalchemy",
     "velruse>=1.0.3",
     "pyramid>=1.5.1",

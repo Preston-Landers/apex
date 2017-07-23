@@ -1,4 +1,4 @@
-cryptacular
+bcrypt>=3.0.0
 zope.sqlalchemy
 velruse >= 1.0.3
 pyramid > 1.1.2

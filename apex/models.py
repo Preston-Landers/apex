@@ -1,43 +1,32 @@
 import hashlib
-import random
+
+import bcrypt
 import six
-import string
 import transaction
-
-from cryptacular.bcrypt import BCRYPTPasswordManager
-
 from pyramid.threadlocal import get_current_request
 from pyramid.util import DottedNameResolver
-
-from sqlalchemy import (Column,
-                        ForeignKey,
-                        Index,
-                        Table,
-                        types,
-                        Unicode)
+from sqlalchemy import Column, ForeignKey, Index, Table, types, Unicode
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import (relationship,
-                            scoped_session,
-                            sessionmaker,
-                            synonym)
+from sqlalchemy.orm import relationship, scoped_session, sessionmaker, synonym
 from sqlalchemy.sql.expression import func
-
-from zope.sqlalchemy import ZopeTransactionExtension 
+from zope.sqlalchemy import ZopeTransactionExtension
 
 from apex.lib.db import get_or_create
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
-auth_group_table = Table('auth_auth_groups', Base.metadata,
-    Column('auth_id', types.Integer(), \
-        ForeignKey('auth_id.id', onupdate='CASCADE', ondelete='CASCADE')),
-    Column('group_id', types.Integer(), \
-        ForeignKey('auth_groups.id', onupdate='CASCADE', ondelete='CASCADE'))
+auth_group_table = Table(
+    'auth_auth_groups', Base.metadata,
+    Column('auth_id', types.Integer(),
+           ForeignKey('auth_id.id', onupdate='CASCADE', ondelete='CASCADE')),
+    Column('group_id', types.Integer(),
+           ForeignKey('auth_groups.id', onupdate='CASCADE', ondelete='CASCADE'))
 )
 # need to create Unique index on (auth_id,group_id)
 Index('auth_group', auth_group_table.c.auth_id, auth_group_table.c.group_id)
+
 
 class AuthGroup(Base):
     """ Table name: auth_groups
@@ -50,13 +39,13 @@ class AuthGroup(Base):
     """
     __tablename__ = 'auth_groups'
     __table_args__ = {'sqlite_autoincrement': True}
-    
+
     id = Column(types.Integer(), primary_key=True)
     name = Column(Unicode(80), unique=True, nullable=False)
     description = Column(Unicode(255), default=u'')
 
-    users = relationship('AuthID', secondary=auth_group_table, \
-                     backref='auth_groups')
+    users = relationship('AuthID', secondary=auth_group_table,
+                         backref='auth_groups')
 
     def __repr__(self):
         return u'%s' % self.name
@@ -66,7 +55,7 @@ class AuthGroup(Base):
 
     def __str__(self):
         return self.__unicode__()
-    
+
 
 class AuthID(Base):
     """ Table name: auth_id
@@ -85,11 +74,10 @@ class AuthID(Base):
 
     id = Column(types.Integer(), primary_key=True)
     display_name = Column(Unicode(80), default=u'')
-    active = Column(types.Enum(u'Y',u'N',u'D', name=u'active'), default=u'Y')
+    active = Column(types.Enum(u'Y', u'N', u'D', name=u'active'), default=u'Y')
     created = Column(types.DateTime(), default=func.now())
 
-    groups = relationship('AuthGroup', secondary=auth_group_table, \
-                      backref='auth_users')
+    groups = relationship('AuthGroup', secondary=auth_group_table, backref='auth_users')
 
     users = relationship('AuthUser')
 
@@ -98,10 +86,9 @@ class AuthID(Base):
     groups = association_proxy('auth_group_table', 'authgroup')
     """
 
-    last_login = relationship('AuthUserLog', \
-                         order_by='AuthUserLog.id.desc()', uselist=False)
-    login_log = relationship('AuthUserLog', \
-                         order_by='AuthUserLog.id')
+    last_login = relationship(
+        'AuthUserLog', order_by='AuthUserLog.id.desc()', uselist=False)
+    login_log = relationship('AuthUserLog', order_by='AuthUserLog.id')
 
     def in_group(self, group):
         """
@@ -120,7 +107,7 @@ class AuthID(Base):
 
            user = AuthID.get_by_id(1)
         """
-        return DBSession.query(cls).filter(cls.id==id).first()    
+        return DBSession.query(cls).filter(cls.id == id).first()
 
     def get_profile(self, request=None):
         """
@@ -154,7 +141,8 @@ class AuthID(Base):
         if self.groups:
             for group in self.groups:
                 group_list.append(group.name)
-        return ','.join( map( str, group_list ) )
+        return ','.join(map(str, group_list))
+
 
 class AuthUser(Base):
     """ Table name: auth_users
@@ -174,37 +162,37 @@ class AuthUser(Base):
     auth_id = Column(types.Integer, ForeignKey(AuthID.id), index=True)
     provider = Column(Unicode(80), default=u'local', index=True)
     login = Column(Unicode(80), default=u'', index=True)
-    salt = Column(Unicode(24))
+    salt = Column(Unicode(40))
     _password = Column('password', Unicode(80), default=u'')
     email = Column(Unicode(80), default=u'', index=True)
     created = Column(types.DateTime(), default=func.now())
-    active = Column(types.Enum(u'Y',u'N',u'D', name=u'active'), default=u'Y')
+    active = Column(types.Enum(u'Y', u'N', u'D', name=u'active'), default=u'Y')
 
     # need unique index on auth_id, provider, login
     # create unique index ilp on auth_users (auth_id,login,provider);
     # how do we handle same auth on multiple ids?
 
-    def _set_password(self, password):
-        self.salt = self.get_salt(24)
-        password = password + self.salt
-        self._password = BCRYPTPasswordManager().encode(password, rounds=12)
+    def _set_password(self, password, rounds=13):
+        # Handle arbitrarily long passwords by pre-hashing
+        self._password = bcrypt.hashpw(
+            self._pre_hash_password(password),
+            bcrypt.gensalt(rounds=rounds)).decode('utf-8')
 
     def _get_password(self):
         return self._password
 
-    password = synonym('_password', descriptor=property(_get_password, \
-                       _set_password))
+    @staticmethod
+    def _pre_hash_password(password):
+        return hashlib.sha512(password.encode('utf-8')).digest()
 
-    def get_salt(self, length):
-        m = hashlib.sha256()
-        word = ''
+    password = synonym('_password', descriptor=property(_get_password, _set_password))
 
-        for i in six.moves.xrange(length):
-            word += random.choice(string.ascii_letters)
-
-        m.update(word.encode('utf-8'))
-
-        return six.u(m.hexdigest()[:length])
+    def get_salt(self, length, rounds=13):
+        # salt = bcrypt.gensalt(rounds=rounds)
+        # salt = salt.decode('utf-8')[:length]
+        # return salt
+        # Ignored - salt is generated once in _set_password and stored inside the hash.
+        return ''
 
     @classmethod
     def get_by_id(cls, id):
@@ -217,7 +205,7 @@ class AuthUser(Base):
 
            user = AuthID.get_by_id(1)
         """
-        return DBSession.query(cls).filter(cls.id==id).first()    
+        return DBSession.query(cls).filter(cls.id == id).first()
 
     @classmethod
     def get_by_login(cls, login):
@@ -230,7 +218,7 @@ class AuthUser(Base):
 
            user = AuthUser.get_by_login('login')
         """
-        return DBSession.query(cls).filter(cls.login==login).first()
+        return DBSession.query(cls).filter(cls.login == login).first()
 
     @classmethod
     def get_by_email(cls, email):
@@ -243,10 +231,11 @@ class AuthUser(Base):
 
            user = AuthUser.get_by_email('email@address.com')
         """
-        return DBSession.query(cls).filter(cls.email==email).first()
+        return DBSession.query(cls).filter(cls.email == email).first()
 
     @classmethod
     def check_password(cls, **kwargs):
+        user = None
         if 'id' in kwargs:
             user = cls.get_by_id(kwargs['id'])
         if 'login' in kwargs:
@@ -255,8 +244,9 @@ class AuthUser(Base):
         if not user:
             return False
         try:
-            if BCRYPTPasswordManager().check(user.password,
-                '%s%s' % (kwargs['password'], user.salt)):
+            if bcrypt.checkpw(
+                    cls._pre_hash_password(kwargs['password']),
+                    user.password.encode('utf-8')):
                 return True
         except TypeError:
             pass
@@ -266,10 +256,11 @@ class AuthUser(Base):
         if fallback_auth:
             resolver = DottedNameResolver(fallback_auth.split('.', 1)[0])
             fallback = resolver.resolve(fallback_auth)
-            return fallback().check(DBSession, request, user, \
-                       kwargs['password'])
+            return fallback().check(
+                DBSession, request, user, kwargs['password'])
 
         return False
+
 
 class AuthUserLog(Base):
     """
@@ -287,7 +278,8 @@ class AuthUserLog(Base):
     user_id = Column(types.Integer, ForeignKey(AuthUser.id), index=True)
     time = Column(types.DateTime(), default=func.now())
     ip_addr = Column(Unicode(39), nullable=False)
-    event = Column(types.Enum(u'L',u'R',u'P',u'F', name=u'event'), default=u'L')
+    event = Column(types.Enum(u'L', u'R', u'P', u'F', name=u'event'), default=u'L')
+
 
 def populate(settings):
     session = DBSession()
@@ -295,10 +287,10 @@ def populate(settings):
     default_groups = []
     if 'apex.default_groups' in settings:
         for name in settings['apex.default_groups'].split(','):
-            default_groups.append((six.u(name.strip()),u''))
+            default_groups.append((six.u(name.strip()), u''))
     else:
-        default_groups = [(u'users',u'User Group'), \
-                          (u'admin',u'Admin Group')]
+        default_groups = [(u'users', u'User Group'),
+                          (u'admin', u'Admin Group')]
     for name, description in default_groups:
         group = AuthGroup(name=name, description=description)
         session.add(group)
@@ -306,14 +298,15 @@ def populate(settings):
     session.flush()
     transaction.commit()
 
+
 def initialize_sql(engine, settings):
     DBSession.configure(bind=engine)
     Base.metadata.bind = engine
     Base.metadata.create_all(engine)
     if 'apex.velruse_providers' in settings:
         pass
-        #SQLBase.metadata.bind = engine
-        #SQLBase.metadata.create_all(engine)
+        # SQLBase.metadata.bind = engine
+        # SQLBase.metadata.create_all(engine)
     try:
         populate(settings)
     except IntegrityError:
