@@ -1,4 +1,4 @@
-%if form.errors.has_key('whole_form'):
+%if 'whole_form' in form.errors:
 	%for error in form.errors.get('whole_form'):
 		<p class="field_error">${error}</p>
 	%endfor

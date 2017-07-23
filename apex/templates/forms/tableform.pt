@@ -2,7 +2,7 @@
   metal:define-macro="main"
   xmlns:i18n="http://xml.zope.org/namespaces/i18n"
   i18n:domain="Apex">
-  <tal:if tal:condition="form.errors.has_key('whole_form')">
+  <tal:if tal:condition="'whole_form' in form.errors">
     <tal:r  tal:repeat="error form.errors.get('whole_form')">
       <p class="field_error">${error}</p>
     </tal:r>
